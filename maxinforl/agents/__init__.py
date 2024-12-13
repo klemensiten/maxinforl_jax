@@ -1,0 +1,5 @@
+from maxinforl.agents.maxinfosac.maxinfosac_learner import MaxInfoSacLearner
+from maxinforl.agents.maxinforedq.maxinforedq_learner import MaxEntREDQLearner
+from maxinforl.agents.drqv2.drqv2_learner import DrQv2Learner
+from maxinforl.agents.maxinfodrqv2.maxinfodrqv2_learner import MaxInfoDrQv2Learner
+from maxinforl.agents.maxinfodrq.maxinfodrq_learner import MaxInfoDrQLearner
