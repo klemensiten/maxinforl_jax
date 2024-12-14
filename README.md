@@ -1,20 +1,7 @@
 # MaxInfoRL: Boosting exploration in RL through information gain maximization
 
-An implementation of [MaxInfoRL][paper], a simple, flexible, and scalable reinforcement
-learning algorithm that enhances exploration in RL by automatically combining intrinsic and extrinsic rewards.
-
-
-
-If you find this code useful, please reference in your paper:
-
-```
-@article{sukhija2024maxinforl,
-  title={MaxInfoRL: Boosting exploration in reinforcement learning through information gain maximization},
-  author={Sukhija, Bhavya and Coros, Stelian and Krause, Andreas and Abbeel, Pieter and Sferrazza, Carmelo},
-  journal={ArXiv},
-  year={2024}
-}
-```
+An implementation of [MaxInfoRL][paper], a simple, flexible, and scalable class of reinforcement
+learning algorithms that enhance exploration in RL by automatically combining intrinsic and extrinsic rewards.
 
 To learn more:
 
@@ -49,6 +36,7 @@ For instance using
 pip install -U "jax[cuda12]"
 ```
 
+## Training
 
 Training script:
 
@@ -81,3 +69,24 @@ files. You can override them if needed.
 [paper]: https://openreview.net/pdf?id=R4q3cY3kQf
 [website]: https://sukhijab.github.io/
 [tweet]: https://sukhijab.github.io/
+
+## Custom environments
+
+This repo relies on jaxrl to load environments, natively supporting Gym and DM Control environments. If your environment is registered in Gym, you can directly use it (just adjust the configs.yaml file accordingly). 
+
+# Citation
+If you find MaxInfoRL useful for your research, please cite this work:
+```
+@article{sukhija2024maxinforl,
+  title={MaxInfoRL: Boosting exploration in reinforcement learning through information gain maximization},
+  author={Sukhija, Bhavya and Coros, Stelian and Krause, Andreas and Abbeel, Pieter and Sferrazza, Carmelo},
+  journal={ArXiv},
+  year={2024}
+}
+```
+
+# References
+This codebase contains some files adapted from other sources:
+* Stable-Baselines3: https://github.com/DLR-RM/stable-baselines3
+* jaxrl (original repo): https://github.com/ikostrikov/jaxrl/tree/main
+* jaxrl (fork): https://github.com/sukhijab/jaxrl

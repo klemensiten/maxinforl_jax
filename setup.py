@@ -7,7 +7,6 @@ required = [
     'gymnasium==0.29.1',
     'distrax',
     'pyyaml',
-    'humanoid-bench @ git+https://github.com/sukhijab/humanoid-bench.git',
 ]
 
 extras = {}
