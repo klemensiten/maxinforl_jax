@@ -3,7 +3,7 @@ import argparse
 import yaml
 from pathlib import Path
 from typing import List
-
+import os
 
 def experiment(
         project_name: str,
@@ -19,7 +19,9 @@ def experiment(
         exp_hash: str = '',
 ):
     from maxinforl.utils.train_utils import train
-    conf = yaml.safe_load(Path('configs.yaml').read_text())
+    ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(ROOT_PATH, 'configs.yaml')
+    conf = yaml.safe_load(Path(config_path).read_text())
     # get class of environment: dmc_small, dmc_large, humanoid_bench
     env_class = conf[env_name]['env_class']
     max_steps, eval_interval = conf[env_name]['max_steps'], conf[env_name]['eval_interval']
