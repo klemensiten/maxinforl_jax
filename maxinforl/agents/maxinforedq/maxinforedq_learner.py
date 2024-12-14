@@ -141,7 +141,7 @@ def _update_jit(
     }
 
 
-class MaxEntREDQLearner(object):
+class MaxInfoREDQLearner(object):
 
     def __init__(
             self,

@@ -1,8 +1,7 @@
 # MaxInfoRL: Boosting exploration in RL through information gain maximization
 
-A reimplementation of [MaxInfoRL][paper], a scalable and general reinforcement
-learning algorithm that masters a wide range of applications with fixed
-hyperparameters.
+An implementation of [MaxInfoRL][paper], a simple, flexible, and scalable reinforcement
+learning algorithm that enhances exploration in RL by automatically combining intrinsic and extrinsic rewards.
 
 
 
@@ -39,12 +38,16 @@ of off-policy model-free RL methods for continuous state-action spaces. We provi
 ## Installation
 
 ```sh
-pip install .
+pip install -e .
 ```
 
 ### Remark: 
 The above command does not install the GPU version of [JAX][jax]. Please manually install the GPU version if needed.
+For instance using 
 
+```sh
+pip install -U "jax[cuda12]"
+```
 
 
 Training script:

@@ -166,35 +166,35 @@ humanoid_bench:
     action_cost: 0.0
     action_repeat: 1
   train_kwargs:
-    replay_buffer_size: 1_000_000
+    replay_buffer_size: 2_500_000
     training_start: 0
     log_interval: 1_000
     eval_episodes: 5
     batch_size: 256
     updates_per_step: 1
   maxinfosac:
-    hidden_dims: [ 256, 256 ]
+    hidden_dims: [512, 512]
     discount: 0.99
     tau: 0.005
     target_update_period: 1
     target_entropy: NULL
     backup_entropy: true
-    actor_lr: 0.0003
-    critic_lr: 0.0003
-    temp_lr: 0.0003
-    ens_lr: 0.0003
-    dyn_ent_lr: 0.0003
-    model_hidden_dims: [ 256, 256 ]
+    actor_lr: 0.0005
+    critic_lr: 0.0005
+    temp_lr: 0.0005
+    ens_lr: 0.0005
+    dyn_ent_lr: 0.0005
+    model_hidden_dims: [512, 512]
   sac:
-    hidden_dims: [ 256, 256 ]
+    hidden_dims: [512, 512]
     discount: 0.99
     tau: 0.005
     target_update_period: 1
     target_entropy: NULL
     backup_entropy: true
-    actor_lr: 0.0003
-    critic_lr: 0.0003
-    temp_lr: 0.0003
+    actor_lr: 0.0005
+    critic_lr: 0.0005
+    temp_lr: 0.0005
 
 cartpole-swingup_sparse:
   env_class: dmc_small
@@ -255,3 +255,18 @@ MountainCarContinuous-v0:
   env_class: gym
   max_steps: 50_000
   eval_interval: 1_000
+
+humanoid_bench/h1-stand-v0:
+  env_class: humanoid_bench
+  max_steps: 5_000_000
+  eval_interval: 10_000
+
+humanoid_bench/h1-walk-v0:
+  env_class: humanoid_bench
+  max_steps: 5_000_000
+  eval_interval: 10_000
+
+humanoid_bench/h1-run-v0:
+  env_class: humanoid_bench
+  max_steps: 5_000_000
+  eval_interval: 10_000

@@ -32,6 +32,9 @@ def experiment(
         env_kwargs['action_cost'] = action_cost
     train_kwargs = conf['train_kwargs']
     train_kwargs['replay_buffer_size'] = min(train_kwargs['replay_buffer_size'], max_steps)
+    if 'updates_per_step' in conf_alg:
+        train_kwargs['updates_per_step'] = conf_alg['updates_per_step']
+        del conf_alg['updates_per_step']
 
     train(
         project_name=project_name,
@@ -42,7 +45,8 @@ def experiment(
         alg_kwargs=conf_alg,
         env_kwargs=env_kwargs,
         wandb_log=wandb_log,
-        log_config=conf_alg | env_kwargs | train_kwargs,
+        log_config=conf_alg | env_kwargs | train_kwargs | {'alg_name': alg_name, 'env_name': env_name,
+                                                           'seed': seed},
         logs_dir=logs_dir,
         save_video=save_video,
         use_tqdm=use_tqdm,
@@ -84,7 +88,7 @@ if __name__ == '__main__':
     parser.add_argument('--project_name', type=str, default='MCTest')
     parser.add_argument('--entity_name', type=str, required=True)
     parser.add_argument('--alg_name', type=str, default='maxinfosac')
-    parser.add_argument('--env_name', type=str, default='humanoid-run')
+    parser.add_argument('--env_name', type=str, default='cartpole-swingup_sparse')
     parser.add_argument('--wandb_log', type=int, default=1)
     parser.add_argument('--logs_dir', type=str, default='./logs/')
     parser.add_argument('--save_video', type=int, default=0)

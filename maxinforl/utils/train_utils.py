@@ -10,7 +10,7 @@ from typing import Optional, Dict, Callable
 from tensorboardX import SummaryWriter
 
 from jaxrl.agents import DDPGLearner, REDQLearner, SACLearner, DrQLearner
-from maxinforl.agents import MaxInfoSacLearner, MaxEntREDQLearner, MaxInfoDrQv2Learner, MaxInfoDrQLearner, DrQv2Learner
+from maxinforl.agents import MaxInfoSacLearner, MaxInfoREDQLearner, MaxInfoDrQv2Learner, MaxInfoDrQLearner, DrQv2Learner
 from jaxrl.datasets import ReplayBuffer
 from maxinforl.datasets import NstepReplayBuffer
 from jaxrl.evaluation import evaluate
@@ -189,8 +189,9 @@ def train(
                            env.action_space.sample(), **alg_kwargs)
     elif alg_name == 'redq':
         agent = REDQLearner(seed,
-                            env.observation_space.sample(),
-                            env.action_space.sample(),
+                            env.observation_space.sample()[np.newaxis],
+                            env.action_space.sample()[np.newaxis],
+                            policy_update_delay=updates_per_step,
                             **alg_kwargs)
     elif alg_name == 'ddpg':
         agent = DDPGLearner(seed,
@@ -201,9 +202,11 @@ def train(
                                   env.observation_space.sample(),
                                   env.action_space.sample(), **alg_kwargs)
     elif alg_name == 'maxinforedq':
-        agent = MaxEntREDQLearner(seed,
-                                  env.observation_space.sample(),
-                                  env.action_space.sample(), **alg_kwargs)
+        agent = MaxInfoREDQLearner(seed,
+                                   env.observation_space.sample()[np.newaxis],
+                                   env.action_space.sample()[np.newaxis],
+                                   policy_update_delay=updates_per_step,
+                                   **alg_kwargs)
     elif alg_name == 'drq':
         agent = DrQLearner(seed,
                            env.observation_space.sample()[jnp.newaxis],
