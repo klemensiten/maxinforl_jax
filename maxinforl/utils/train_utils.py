@@ -212,11 +212,13 @@ def train(
                            env.observation_space.sample()[jnp.newaxis],
                            env.action_space.sample()[jnp.newaxis], **alg_kwargs
                            )
+        n_steps_returns = -1
     elif alg_name == 'maxinfodrq':
         agent = MaxInfoDrQLearner(seed,
                                   env.observation_space.sample()[jnp.newaxis],
                                   env.action_space.sample()[jnp.newaxis], **alg_kwargs
                                   )
+        n_steps_returns = -1
     elif alg_name == 'drqv2':
         agent = DrQv2Learner(seed,
                              env.observation_space.sample()[jnp.newaxis],
@@ -229,7 +231,7 @@ def train(
                                     )
     else:
         raise NotImplementedError()
-    if n_steps_returns < 0:
+    if n_steps_returns <= 1:
         replay_buffer = ReplayBuffer(observation_space=env.observation_space,
                                      action_space=env.action_space,
                                      capacity=replay_buffer_size or max_steps)

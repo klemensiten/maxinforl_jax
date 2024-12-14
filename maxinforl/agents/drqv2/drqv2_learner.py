@@ -86,7 +86,7 @@ class DormantRatioModel(object):
                  perturb_rate: float = 2.0,
                  target_dormant_ratio: float = 0.2,
                  dormant_temp: float = 10.0,
-                 perturbation_freq: int = 2e5,
+                 perturbation_freq: int = 1e5,
                  min_awaken_update_steps: int = 2_000,
                  ):
         # self.dormant_ratio_calculator = dormant_ratio_calculator
