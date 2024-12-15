@@ -51,6 +51,9 @@ python examples/state_based/experiment.py \
   --wandb_log 1
 ```
 
+For the state based experiments you can run sac, redq, maxinfosac or maxinforedq by specifying the alg_name flag.
+
+
 2. Vision-based
 
 ```sh
@@ -61,6 +64,7 @@ python examples/vision_based/experiment.py \
   --env_name cartpole-swingup_sparse \
   --wandb_log 1
 ```
+For the vision based experiments you can run drq, drqv2, maxinfodrq or maxinfodrqv2 by specifying the alg_name flag.
 
 All hyperparameters are listed in the `examples/state_based//configs.yaml` and `examples/vision_based//configs.yaml` 
 files. You can override them if needed.
