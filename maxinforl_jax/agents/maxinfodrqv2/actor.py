@@ -3,9 +3,9 @@ from typing import Tuple
 import jax.numpy as jnp
 import jax.random
 
-from maxinforl.datasets import NstepBatch
+from maxinforl_jax.datasets import NstepBatch
 from jaxrl.networks.common import InfoDict, Model, Params
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble
 
 
 def clip(x, min: float = -1.0, max: float = 1.0):

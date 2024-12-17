@@ -7,19 +7,19 @@ import numpy as np
 import optax
 import copy
 from jaxrl.agents.drq.augmentations import batched_random_crop
-from maxinforl.agents.maxinfodrqv2.networks import MaxInfoDrQv2DoubleCritic
-from maxinforl.agents.maxinfodrqv2.networks import MaxInfoDrQv2Policy
-from maxinforl.agents.drqv2.networks import DrQv2PolicyDormantRatioCalculator
-from maxinforl.agents.maxinfodrqv2.actor import update as update_actor
+from maxinforl_jax.agents.maxinfodrqv2.networks import MaxInfoDrQv2DoubleCritic
+from maxinforl_jax.agents.maxinfodrqv2.networks import MaxInfoDrQv2Policy
+from maxinforl_jax.agents.drqv2.networks import DrQv2PolicyDormantRatioCalculator
+from maxinforl_jax.agents.maxinfodrqv2.actor import update as update_actor
 from jaxrl.agents.drq.drq_learner import target_update
-from maxinforl.agents.maxinfodrqv2.critic import update as update_critic
-from maxinforl.datasets import NstepBatch
+from maxinforl_jax.agents.maxinfodrqv2.critic import update as update_critic
+from maxinforl_jax.datasets import NstepBatch
 from jaxrl.networks import policies
 from jaxrl.networks.common import InfoDict, Model, PRNGKey
 from jaxrl.agents.sac.temperature import update as update_temp
 from jaxrl.agents.sac import temperature
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
-from maxinforl.agents.drqv2.drqv2_learner import DormantRatioModel, perturb_params
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
+from maxinforl_jax.agents.drqv2.drqv2_learner import DormantRatioModel, perturb_params
 
 
 def update_batch(batch: NstepBatch, key: PRNGKey):

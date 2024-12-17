@@ -132,6 +132,57 @@ dmc_big:
     steps_to_final_sig: 2_000_000
     use_dormant_ratio: true
 
+dmc_big_low_lr:
+  env_kwargs:
+    action_cost: 0.0
+    action_repeat: 2
+    from_pixels: True
+    frame_stack: 3
+    image_size: 84
+    gray_scale: False
+  train_kwargs:
+    replay_buffer_size: 1_000_000
+    training_start: 0
+    log_interval: 1_000
+    eval_episodes: 5
+    batch_size: 256
+    updates_per_step: 1
+    n_steps_returns: 3
+  drqv2:
+    hidden_dims: [ 1024, 1024 ]
+    discount: 0.99
+    tau: 0.01
+    target_update_period: 1
+    actor_lr: 0.0001
+    critic_lr: 0.0001
+    cnn_features: [ 32, 32, 32, 32 ]
+    cnn_strides: [ 2, 1, 1, 1 ]
+    cnn_padding: 'VALID'
+    latent_dim: 100
+    init_sig: 1.0
+    final_sig: 0.1
+    steps_to_final_sig: 2_000_000
+    use_dormant_ratio: true
+  maxinfodrqv2:
+    hidden_dims: [ 1024, 1024 ]
+    discount: 0.99
+    tau: 0.01
+    target_update_period: 1
+    actor_lr: 0.00008
+    critic_lr: 0.00008
+    ens_lr: 0.00008
+    dyn_ent_lr: 0.00008
+    model_hidden_dims: [ 1024, 1024 ]
+    cnn_features: [ 32, 32, 32, 32 ]
+    cnn_strides: [ 2, 1, 1, 1 ]
+    cnn_padding: 'VALID'
+    latent_dim: 100
+    obs_dim: 32
+    init_sig: 1.0
+    final_sig: 0.1
+    steps_to_final_sig: 2_000_000
+    use_dormant_ratio: true
+
 
 cartpole-swingup_sparse:
   env_class: dmc_small
@@ -179,16 +230,16 @@ humanoid-run:
   eval_interval: 10_000
 
 dog-stand:
-  env_class: dmc_big
+  env_class: dmc_big_low_lr
   max_steps: 7_500_000
   eval_interval: 10_000
 
 dog-walk:
-  env_class: dmc_big
+  env_class: dmc_big_low_lr
   max_steps: 7_500_000
   eval_interval: 10_000
 
 dog-run:
-  env_class: dmc_big
+  env_class: dmc_big_low_lr
   max_steps: 7_500_000
   eval_interval: 10_000

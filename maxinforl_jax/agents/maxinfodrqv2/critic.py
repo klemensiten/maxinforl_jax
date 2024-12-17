@@ -3,9 +3,9 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-from maxinforl.datasets import NstepBatch
+from maxinforl_jax.datasets import NstepBatch
 from jaxrl.networks.common import InfoDict, Model, Params, PRNGKey
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble
 
 
 def update(key: PRNGKey,

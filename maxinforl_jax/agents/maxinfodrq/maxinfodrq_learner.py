@@ -1,3 +1,5 @@
+"""Implementations of algorithms for continuous control."""
+
 import functools
 from typing import Optional, Sequence, Tuple
 
@@ -6,22 +8,22 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
+from jaxrl.agents.drq.augmentations import batched_random_crop
+from jaxrl.agents.drq.networks import DrQPolicy
+from maxinforl_jax.agents.maxinfodrq.networks import MaxInfoDrQDoubleCritic
 from jaxrl.agents.sac import temperature
-from maxinforl.agents.maxinfosac.actor import update as update_actor
-from maxinforl.agents.maxinfosac.critic import target_update
-from maxinforl.agents.maxinfosac.critic import update as update_critic
-from jaxrl.agents.sac.temperature import update as update_temp
-
+from maxinforl_jax.agents.maxinfodrq.actor import update as update_actor
+from jaxrl.agents.drq.drq_learner import target_update
+from maxinforl_jax.agents.maxinfodrq.critic import update as update_critic
 from jaxrl.datasets import Batch
-from jaxrl.networks import critic_net, policies
+from jaxrl.networks import policies
 from jaxrl.networks.common import InfoDict, Model, PRNGKey
-
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
+from jaxrl.agents.sac.temperature import update as update_temp
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
 
 
 @functools.partial(jax.jit,
                    static_argnames=('ens',
-                                    'backup_entropy',
                                     'update_target',
                                     'use_log_transform',
                                     'predict_rewards',
@@ -30,9 +32,17 @@ def _update_jit(
         rng: PRNGKey, actor: Model, critic: Model, target_actor: Model, target_critic: Model, temp: Model,
         dyn_entropy_temp: Model, ens: DeterministicEnsemble, ens_state: EnsembleState,
         batch: Batch, discount: float, tau: float,
-        target_entropy: float, backup_entropy: bool, update_target: bool,
+        target_entropy: float, update_target: bool,
         use_log_transform: bool, predict_rewards: bool, predict_diff: bool,
 ) -> Tuple[PRNGKey, Model, Model, Model, Model, Model, Model, EnsembleState, InfoDict]:
+    rng, key = jax.random.split(rng)
+    observations = batched_random_crop(key, batch.observations)
+    rng, key = jax.random.split(rng)
+    next_observations = batched_random_crop(key, batch.next_observations)
+
+    batch = batch._replace(observations=observations,
+                           next_observations=next_observations)
+
     rng, key = jax.random.split(rng)
     new_critic, ens_state, critic_info = update_critic(
         key=key,
@@ -45,12 +55,27 @@ def _update_jit(
         ens_state=ens_state,
         batch=batch,
         discount=discount,
-        backup_entropy=backup_entropy)
+        backup_entropy=True)
 
+    next_state, state, obs = critic_info['next_state'], critic_info['state'], critic_info['obs']
+    assert isinstance(state, jnp.ndarray)
+    assert isinstance(next_state, jnp.ndarray)
+    assert isinstance(obs, jnp.ndarray)
+    del critic_info['next_state'], critic_info['state'], critic_info['obs']
     if update_target:
         new_target_critic = target_update(new_critic, target_critic, tau)
     else:
         new_target_critic = target_critic
+
+    # update encoder params for the actors
+    new_actor_params = actor.params.copy()
+    new_actor_params.update({'SharedEncoder': new_critic.params['SharedEncoder']})
+    actor = actor.replace(params=new_actor_params)
+
+    # update encoder params for the target actor
+    # new_actor_params = target_actor.params.copy()
+    # new_actor_params.update({'SharedEncoder': new_target_critic.params['SharedEncoder']})
+    # target_actor = target_actor.replace(params=new_actor_params)
 
     rng, key = jax.random.split(rng)
     new_actor, ens_state, actor_info = update_actor(key=key,
@@ -61,7 +86,9 @@ def _update_jit(
                                                     dyn_entropy_temp=dyn_entropy_temp,
                                                     ens=ens,
                                                     ens_state=ens_state,
+                                                    state=state,
                                                     batch=batch)
+
     if update_target:
         new_target_actor = target_update(new_actor, target_actor, tau)
     else:
@@ -75,13 +102,14 @@ def _update_jit(
     dyn_ent_info = {f'dyn_ent_{key}': val for key, val in dyn_ent_info.items()}
 
     if predict_diff:
-        outputs = batch.next_observations - batch.observations
+        outputs = next_state - state
     else:
-        outputs = batch.next_observations
+        outputs = next_state
+    outputs = jnp.concatenate([outputs, obs], axis=-1)
     if predict_rewards:
         outputs = jnp.concatenate([outputs, batch.rewards.reshape(-1, 1)], axis=-1)
     new_ens_state, (loss, mse) = ens.update(
-        input=jnp.concatenate([batch.observations, batch.actions], axis=-1),
+        input=jnp.concatenate([state, batch.actions], axis=-1),
         output=outputs,
         state=ens_state,
     )
@@ -111,7 +139,7 @@ def _update_jit(
     }
 
 
-class MaxInfoSacLearner(object):
+class MaxInfoDrQLearner(object):
 
     def __init__(self,
                  seed: int,
@@ -126,25 +154,22 @@ class MaxInfoSacLearner(object):
                  ens_wd: float = 0.0,
                  hidden_dims: Sequence[int] = (256, 256),
                  model_hidden_dims: Sequence[int] = (256, 256),
+                 cnn_features: Sequence[int] = (32, 32, 32, 32),
+                 cnn_strides: Sequence[int] = (2, 1, 1, 1),
+                 cnn_padding: str = 'VALID',
+                 latent_dim: int = 50,
+                 obs_dim: int = 64,
                  num_heads: int = 5,
                  predict_reward: bool = True,
-                 predict_diff: bool = True,
+                 predict_diff: bool = False,
                  use_log_transform: bool = True,
                  learn_std: bool = False,
                  discount: float = 0.99,
                  tau: float = 0.005,
                  target_update_period: int = 1,
                  target_entropy: Optional[float] = None,
-                 backup_entropy: bool = True,
-                 init_temperature: float = 1.0,
                  init_temperature_dyn_entropy: float = 1.0,
-                 init_mean: Optional[np.ndarray] = None,
-                 policy_final_fc_init_scale: float = 1.0,
-                 use_bronet: bool = False,
-                 reset_period: Optional[int] = None,
-                 reset_models: bool = False,
-                 max_gradient_norm: Optional[float] = None,
-                 ):
+                 init_temperature: float = 0.1):
 
         self.predict_reward = predict_reward
         self.predict_diff = predict_diff
@@ -157,95 +182,45 @@ class MaxInfoSacLearner(object):
         else:
             self.target_entropy = target_entropy
 
-        self.backup_entropy = backup_entropy
-
         self.tau = tau
         self.target_update_period = target_update_period
         self.discount = discount
 
-        if reset_period is None:
-            self.reset_period = 250_000
-        else:
-            self.reset_period = reset_period
-
-        self._reset_models = reset_models
-        self.use_bronet = use_bronet
-
-        # kwargs saved for resetting
-        self.hidden_dims = hidden_dims
-        self.dummy_obs = observations
-        self.dummy_acts = actions
-        self.policy_final_fc_init_scale = policy_final_fc_init_scale
-        self.init_mean = init_mean
-        self.init_temperature = init_temperature
-        self.actor_lr = actor_lr
-        self.critic_lr = critic_lr
-        self.temp_lr = temp_lr
-        self.max_gradient_norm = max_gradient_norm
-
         rng = jax.random.PRNGKey(seed)
         rng, actor_key, critic_key, temp_key = jax.random.split(rng, 4)
-        actor_def = policies.NormalTanhPolicy(
-            hidden_dims,
-            action_dim,
-            init_mean=init_mean,
-            final_fc_init_scale=policy_final_fc_init_scale)
-        actor_optimizer = optax.adam(learning_rate=actor_lr)
-        critic_optimizer = optax.adam(learning_rate=critic_lr)
-        temp_optimizer = optax.adam(learning_rate=temp_lr)
-        dyn_ent_temp_optimizer = optax.adamw(learning_rate=dyn_ent_lr, weight_decay=dyn_wd)
-        model_optimizer = optax.adamw(learning_rate=ens_lr, weight_decay=ens_wd)
-        if max_gradient_norm:
-            assert max_gradient_norm > 0
-            actor_optimizer = optax.chain(
-                optax.clip_by_global_norm(max_gradient_norm),  # Apply gradient clipping
-                actor_optimizer  # Apply Adam optimizer
-            )
-            critic_optimizer = optax.chain(
-                optax.clip_by_global_norm(max_gradient_norm),
-                critic_optimizer,
-            )
 
-            temp_optimizer = optax.chain(
-                optax.clip_by_global_norm(max_gradient_norm),
-                temp_optimizer,
-            )
-
-            dyn_ent_temp_optimizer = optax.chain(
-                optax.clip_by_global_norm(max_gradient_norm),
-                dyn_ent_temp_optimizer,
-            )
-            model_optimizer = optax.chain(
-                optax.clip_by_global_norm(max_gradient_norm),
-                model_optimizer,
-            )
+        actor_def = DrQPolicy(hidden_dims, action_dim, cnn_features,
+                              cnn_strides, cnn_padding, latent_dim)
         actor = Model.create(actor_def,
                              inputs=[actor_key, observations],
-                             tx=actor_optimizer)
+                             tx=optax.adam(learning_rate=actor_lr))
 
         target_actor = Model.create(actor_def,
                                     inputs=[actor_key, observations])
 
-        critic_def = critic_net.DoubleCritic(hidden_dims, use_bronet=use_bronet)
+        critic_def = MaxInfoDrQDoubleCritic(hidden_dims, cnn_features, cnn_strides,
+                                           cnn_padding, latent_dim, obs_dim=obs_dim)
         critic = Model.create(critic_def,
                               inputs=[critic_key, observations, actions],
-                              tx=critic_optimizer)
+                              tx=optax.adam(learning_rate=critic_lr))
         target_critic = Model.create(
             critic_def, inputs=[critic_key, observations, actions])
 
         temp = Model.create(temperature.Temperature(init_temperature),
                             inputs=[temp_key],
-                            tx=temp_optimizer)
+                            tx=optax.adam(learning_rate=temp_lr))
 
         # information gain kwargs
         dyn_ent_temp_key, rng = jax.random.split(rng, 2)
         dyn_ent_temp = Model.create(temperature.Temperature(init_temperature_dyn_entropy),
                                     inputs=[dyn_ent_temp_key],
-                                    tx=dyn_ent_temp_optimizer)
+                                    tx=optax.adamw(learning_rate=dyn_ent_lr, weight_decay=dyn_wd))
 
+        tx = optax.adamw(learning_rate=ens_lr, weight_decay=ens_wd)
         model_key, rng = jax.random.split(rng, 2)
 
-        output_dim = observations.shape[-1]
+        output_dim = latent_dim + obs_dim
+
         if predict_reward:
             output_dim += 1
 
@@ -255,10 +230,11 @@ class MaxInfoSacLearner(object):
             model_type = DeterministicEnsemble
         ensemble = model_type(
             model_kwargs={'hidden_dims': model_hidden_dims + (output_dim,)},
-            optimizer=model_optimizer,
+            optimizer=tx,
             num_heads=self.num_heads)
 
-        ens_state = ensemble.init(key=model_key, input=jnp.concatenate([observations, actions], axis=-1))
+        dummy_state = jnp.zeros((actions.shape[0], latent_dim))
+        ens_state = ensemble.init(key=model_key, input=jnp.concatenate([dummy_state, actions], axis=-1))
 
         self.use_log_transform = use_log_transform
 
@@ -280,16 +256,14 @@ class MaxInfoSacLearner(object):
         rng, actions = policies.sample_actions(self.rng, self.actor.apply_fn,
                                                self.actor.params, observations,
                                                temperature)
+
         self.rng = rng
 
         actions = np.asarray(actions)
         return np.clip(actions, -1, 1)
 
     def update(self, batch: Batch) -> InfoDict:
-        if self._reset_models:
-            if self.step % self.reset_period == 1 and self.step > 1:
-                rng, self.rng = jax.random.split(self.rng)
-                self.reset_models(rng=rng)
+        self.step += 1
         new_rng, new_actor, new_critic, new_target_actor, new_target_critic, \
             new_temp, new_dyn_entropy_temp, new_ens_state, info = _update_jit(
                 rng=self.rng,
@@ -305,7 +279,6 @@ class MaxInfoSacLearner(object):
                 discount=self.discount,
                 tau=self.tau,
                 target_entropy=self.target_entropy,
-                backup_entropy=self.backup_entropy,
                 update_target=self.step % self.target_update_period == 0,
                 use_log_transform=self.use_log_transform,
                 predict_rewards=self.predict_reward,
@@ -321,54 +294,3 @@ class MaxInfoSacLearner(object):
         self.ens_state = new_ens_state
 
         return info
-
-    def reset_models(self, rng: PRNGKey):
-        print(f'resetting model at step: {self.step}')
-        actor_key, critic_key, temp_key = jax.random.split(rng, 3)
-        action_dim = self.dummy_acts.shape[-1]
-        actor_def = policies.NormalTanhPolicy(
-            self.hidden_dims,
-            action_dim,
-            init_mean=self.init_mean,
-            final_fc_init_scale=self.policy_final_fc_init_scale)
-        actor_optimizer = optax.adam(learning_rate=self.actor_lr)
-        critic_optimizer = optax.adam(learning_rate=self.critic_lr)
-        temp_optimizer = optax.adam(learning_rate=self.temp_lr)
-        if self.max_gradient_norm:
-            assert self.max_gradient_norm > 0
-            actor_optimizer = optax.chain(
-                optax.clip_by_global_norm(self.max_gradient_norm),  # Apply gradient clipping
-                actor_optimizer  # Apply Adam optimizer
-            )
-            critic_optimizer = optax.chain(
-                optax.clip_by_global_norm(self.max_gradient_norm),
-                critic_optimizer,
-            )
-
-            temp_optimizer = optax.chain(
-                optax.clip_by_global_norm(self.max_gradient_norm),
-                temp_optimizer,
-            )
-
-        actor = Model.create(actor_def,
-                             inputs=[actor_key, self.dummy_obs],
-                             tx=actor_optimizer)
-        target_actor = Model.create(actor_def,
-                                    inputs=[actor_key, self.dummy_obs])
-
-        critic_def = critic_net.DoubleCritic(self.hidden_dims, use_bronet=self.use_bronet)
-        critic = Model.create(critic_def,
-                              inputs=[critic_key, self.dummy_obs, self.dummy_acts],
-                              tx=critic_optimizer)
-        target_critic = Model.create(
-            critic_def, inputs=[critic_key, self.dummy_obs, self.dummy_acts])
-
-        temp = Model.create(temperature.Temperature(self.init_temperature),
-                            inputs=[temp_key],
-                            tx=temp_optimizer)
-
-        self.actor = actor
-        self.target_actor = target_actor
-        self.critic = critic
-        self.target_critic = target_critic
-        self.temp = temp

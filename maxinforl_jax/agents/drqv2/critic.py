@@ -3,7 +3,7 @@ from typing import Tuple
 import jax.numpy as jnp
 import jax.random
 
-from maxinforl.datasets import NstepBatch
+from maxinforl_jax.datasets import NstepBatch
 from jaxrl.networks.common import InfoDict, Model, Params
 
 
