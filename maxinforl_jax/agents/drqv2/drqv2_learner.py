@@ -13,11 +13,11 @@ import optax
 
 from jaxrl.agents.drq.augmentations import batched_random_crop
 from jaxrl.agents.drq.networks import DrQDoubleCritic
-from maxinforl.agents.drqv2.networks import DrQv2Policy, DrQv2PolicyDormantRatioCalculator, perturb_params
-from maxinforl.agents.drqv2.actor import update as update_actor
+from maxinforl_jax.agents.drqv2.networks import DrQv2Policy, DrQv2PolicyDormantRatioCalculator, perturb_params
+from maxinforl_jax.agents.drqv2.actor import update as update_actor
 from jaxrl.agents.drq.drq_learner import target_update
-from maxinforl.agents.drqv2.critic import update as update_critic
-from maxinforl.datasets import NstepBatch
+from maxinforl_jax.agents.drqv2.critic import update as update_critic
+from maxinforl_jax.datasets import NstepBatch
 from jaxrl.networks import policies
 from jaxrl.networks.common import InfoDict, Model, PRNGKey
 

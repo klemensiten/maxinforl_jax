@@ -5,7 +5,7 @@ import jax.random
 
 from jaxrl.datasets import Batch
 from jaxrl.networks.common import InfoDict, Model, Params, PRNGKey
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble
 
 
 def update(key: PRNGKey,
@@ -23,7 +23,9 @@ def update(key: PRNGKey,
         dist = actor.apply_fn({'params': actor_params}, batch.observations)
         actions = dist.sample(seed=key)
         log_probs = dist.log_prob(actions)
-        qs = critic(batch.observations, actions)
+        q1, q2 = critic(batch.observations, actions)
+        q = jnp.minimum(q1, q2)
+
         # getting info gain objective
         target_actions = target_actor(batch.observations).sample(seed=target_key)
         target_inp = jnp.concatenate([batch.observations, target_actions], axis=-1)
@@ -33,7 +35,6 @@ def update(key: PRNGKey,
                                                      state=ens_state,
                                                      update_normalizer=True)
         info_gain, target_info_gain = info_gain[:actions.shape[0]], info_gain[actions.shape[0]:]
-        q = jnp.mean(qs, 0)
         dyn_ent_coef, _ = dyn_entropy_temp()
         act_ent_coef, _ = temp()
         total_entropy = dyn_ent_coef * info_gain - act_ent_coef * log_probs
@@ -43,6 +44,8 @@ def update(key: PRNGKey,
             'entropy': -log_probs.mean(),
             'info_gain': info_gain.mean(),
             'target_info_gain': target_info_gain.mean(),
+            # 'actor_info_gain_nans': jnp.isnan(info_gain).sum(),
+            # 'target_actor_info_gain_nans': jnp.isnan(target_info_gain).sum(),
         })
 
     new_actor, (new_ens_state, info) = actor.apply_gradient(actor_loss_fn)

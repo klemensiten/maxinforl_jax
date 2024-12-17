@@ -10,9 +10,9 @@ from typing import Optional, Dict, Callable
 from tensorboardX import SummaryWriter
 
 from jaxrl.agents import DDPGLearner, REDQLearner, SACLearner, DrQLearner
-from maxinforl.agents import MaxInfoSacLearner, MaxInfoREDQLearner, MaxInfoDrQv2Learner, MaxInfoDrQLearner, DrQv2Learner
+from maxinforl_jax.agents import MaxInfoSacLearner, MaxInfoREDQLearner, MaxInfoDrQv2Learner, MaxInfoDrQLearner, DrQv2Learner
 from jaxrl.datasets import ReplayBuffer
-from maxinforl.datasets import NstepReplayBuffer
+from maxinforl_jax.datasets import NstepReplayBuffer
 from jaxrl.evaluation import evaluate
 from jaxrl.utils import make_env
 import wandb

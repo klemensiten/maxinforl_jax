@@ -18,7 +18,7 @@ def experiment(
         action_cost: float = -1,
         exp_hash: str = '',
 ):
-    from maxinforl.utils.train_utils import train
+    from maxinforl_jax.utils.train_utils import train
     ROOT_PATH = os.path.dirname(os.path.abspath(__file__))
     config_path = os.path.join(ROOT_PATH, 'configs.yaml')
     conf = yaml.safe_load(Path(config_path).read_text())

@@ -11,16 +11,16 @@ import numpy as np
 import optax
 
 from jaxrl.agents.sac import temperature
-from maxinforl.agents.maxinforedq.actor import update as update_actor
-from maxinforl.agents.maxinforedq.critic import target_update
-from maxinforl.agents.maxinforedq.critic import update as update_critic
+from maxinforl_jax.agents.maxinforedq.actor import update as update_actor
+from maxinforl_jax.agents.maxinforedq.critic import target_update
+from maxinforl_jax.agents.maxinforedq.critic import update as update_critic
 from jaxrl.agents.sac.temperature import update as update_temp
 
 from jaxrl.datasets import Batch
 from jaxrl.networks import critic_net, policies
 from jaxrl.networks.common import InfoDict, Model, PRNGKey
 
-from maxinforl.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
+from maxinforl_jax.models.ensemble_model import EnsembleState, DeterministicEnsemble, ProbabilisticEnsemble
 
 
 @functools.partial(jax.jit,
