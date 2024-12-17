@@ -1,7 +1,6 @@
 # MaxInfoRL: Boosting exploration in RL through information gain maximization
 
-An implementation of [MaxInfoRL][paper], a simple, flexible, and scalable class of reinforcement
-learning algorithms that enhance exploration in RL by automatically combining intrinsic and extrinsic rewards.
+A jax implementation of [MaxInfoRL][paper], a simple, flexible, and scalable class of reinforcement learning algorithms that enhance exploration in RL by automatically combining intrinsic and extrinsic rewards. For a Pytorch implementation, visit this [Pytorch repository][torchrepo].
 
 To learn more:
 
@@ -18,8 +17,6 @@ and actions. MaxInfoRL is very general and can be combined with a variety
 of off-policy model-free RL methods for continuous state-action spaces. We provide implementations of 
 **MaxInfoSac, MaxInfoREDQ, MaxInfoDrQ, MaxInfoDrQv2**.
 
-
-
 # Instructions
 
 ## Installation
@@ -35,6 +32,8 @@ For instance using
 ```sh
 pip install -U "jax[cuda12]"
 ```
+
+To run HumanoidBench experiments, please install the benchmark dependencies following the instructions in the [original repo](https://github.com/carlosferrazza/humanoid-bench).
 
 ## Training
 
@@ -66,9 +65,10 @@ All hyperparameters are listed in the `examples/state_based//configs.yaml` and `
 files. You can override them if needed.
 
 [jax]: https://github.com/google/jax#pip-installation-gpu-cuda
-[paper]: https://openreview.net/pdf?id=R4q3cY3kQf
-[website]: https://sukhijab.github.io/
+[paper]: https://arxiv.org/abs/2412.12098
+[website]: https://sukhijab.github.io/projects/maxinforl/
 [tweet]: https://sukhijab.github.io/
+[torchrepo]: https://github.com/sukhijab/maxinforl_torch
 
 ## Custom environments
 
@@ -87,6 +87,5 @@ If you find MaxInfoRL useful for your research, please cite this work:
 
 # References
 This codebase contains some files adapted from other sources:
-* Stable-Baselines3: https://github.com/DLR-RM/stable-baselines3
 * jaxrl (original repo): https://github.com/ikostrikov/jaxrl/tree/main
 * jaxrl (fork): https://github.com/sukhijab/jaxrl
